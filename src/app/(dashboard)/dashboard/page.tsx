@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth-store";
+import { api } from "@/lib/api";
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ import {
     Instagram,
     ArrowRight,
     Wifi,
+    Loader2,
 } from "lucide-react";
 
 const container = {
@@ -33,9 +37,28 @@ const item = {
 
 export default function DashboardPage() {
     const user = useAuthStore((s) => s.user);
+    const [connecting, setConnecting] = useState(false);
 
     // Real stats will come from API when Instagram is connected
     const isConnected = false;
+
+    const connectInstagram = async () => {
+        setConnecting(true);
+        try {
+            const response = await api.get<{ url: string; state: string }>("/api/v1/instagram/connect");
+            const url = response?.data?.url;
+            if (url) {
+                window.location.href = url;
+            } else {
+                toast.error("Failed to get Instagram connect URL");
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Failed to connect Instagram";
+            toast.error(message);
+        } finally {
+            setConnecting(false);
+        }
+    };
 
     return (
         <motion.div
@@ -70,9 +93,13 @@ export default function DashboardPage() {
                                     </p>
                                 </div>
                             </div>
-                            <Button size="sm">
-                                <Wifi className="h-4 w-4" />
-                                Connect Now
+                            <Button size="sm" onClick={connectInstagram} disabled={connecting}>
+                                {connecting ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Wifi className="h-4 w-4" />
+                                )}
+                                {connecting ? "Connecting..." : "Connect Now"}
                             </Button>
                         </CardContent>
                     </Card>
