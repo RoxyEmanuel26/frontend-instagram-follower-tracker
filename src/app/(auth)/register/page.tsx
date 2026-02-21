@@ -9,6 +9,7 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth-store";
+import { signInWithGoogle } from "@/lib/google-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -41,7 +42,9 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
     const router = useRouter();
     const registerUser = useAuthStore((s) => s.register);
+    const googleLogin = useAuthStore((s) => s.googleLogin);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
 
     const {
         register,
@@ -67,6 +70,28 @@ export default function RegisterPage() {
             toast.error(message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setGoogleLoading(true);
+        try {
+            await signInWithGoogle(async (idToken) => {
+                try {
+                    await googleLogin(idToken);
+                    toast.success("Welcome!");
+                    router.push("/dashboard");
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : "Google sign in failed";
+                    toast.error(message);
+                } finally {
+                    setGoogleLoading(false);
+                }
+            });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Google sign in failed";
+            toast.error(message);
+            setGoogleLoading(false);
         }
     };
 
@@ -157,7 +182,14 @@ export default function RegisterPage() {
                     </div>
                 </div>
 
-                <Button variant="outline" className="w-full" size="lg">
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                    onClick={handleGoogleSignIn}
+                    loading={googleLoading}
+                    disabled={googleLoading}
+                >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

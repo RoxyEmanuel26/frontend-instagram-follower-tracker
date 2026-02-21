@@ -9,6 +9,8 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth-store";
+import { ApiRequestError } from "@/lib/api";
+import { signInWithGoogle } from "@/lib/google-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -25,7 +27,9 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const router = useRouter();
     const login = useAuthStore((s) => s.login);
+    const googleLogin = useAuthStore((s) => s.googleLogin);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [show2FA, setShow2FA] = useState(false);
 
     const {
@@ -57,10 +61,37 @@ export default function LoginPage() {
                 router.push("/dashboard");
             }
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "Login failed";
-            toast.error(message);
+            if (err instanceof ApiRequestError && err.code === "EMAIL_NOT_VERIFIED") {
+                toast("Please verify your email first", { icon: "📧" });
+                router.push("/verify-email-sent?email=" + encodeURIComponent(data.email));
+            } else {
+                const message = err instanceof Error ? err.message : "Login failed";
+                toast.error(message);
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setGoogleLoading(true);
+        try {
+            await signInWithGoogle(async (idToken) => {
+                try {
+                    await googleLogin(idToken);
+                    toast.success("Welcome!");
+                    router.push("/dashboard");
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : "Google sign in failed";
+                    toast.error(message);
+                } finally {
+                    setGoogleLoading(false);
+                }
+            });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Google sign in failed";
+            toast.error(message);
+            setGoogleLoading(false);
         }
     };
 
@@ -148,7 +179,14 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                <Button variant="outline" className="w-full" size="lg">
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                    onClick={handleGoogleSignIn}
+                    loading={googleLoading}
+                    disabled={googleLoading}
+                >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
                         <path
                             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
