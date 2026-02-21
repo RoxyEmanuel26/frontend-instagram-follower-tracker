@@ -17,17 +17,28 @@ import {
     LogOut,
     User,
     LayoutDashboard,
+    Users,
+    UserCheck,
+    BarChart3,
+    Settings,
 } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
     const pathname = usePathname();
-    const { theme, setTheme } = useUIStore();
+    const { theme, setTheme, toggleSidebar, sidebarOpen } = useUIStore();
     const { user, isAuthenticated, logout } = useAuthStore();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-
     const isDashboard = pathname?.startsWith("/dashboard");
+
+    const dashboardNavItems = [
+        { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+        { href: "/dashboard/followers", label: "Followers", icon: Users },
+        { href: "/dashboard/mutuals", label: "Mutuals", icon: UserCheck },
+        { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+        { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    ];
 
     const themeIcons = { light: Sun, dark: Moon, system: Monitor };
     const ThemeIcon = themeIcons[theme];
@@ -160,11 +171,21 @@ export function Header() {
 
                         {/* Mobile menu toggle */}
                         <button
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                            onClick={() => {
+                                if (isDashboard) {
+                                    toggleSidebar();
+                                } else {
+                                    setMobileMenuOpen(!mobileMenuOpen);
+                                }
+                            }}
+                            className="lg:hidden rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
                             aria-label="Toggle menu"
                         >
-                            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                            {isDashboard ? (
+                                sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />
+                            ) : (
+                                mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -172,13 +193,13 @@ export function Header() {
 
             {/* Mobile Nav */}
             <AnimatePresence>
-                {mobileMenuOpen && (
+                {mobileMenuOpen && !isDashboard && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="md:hidden border-t overflow-hidden"
+                        className="lg:hidden border-t overflow-hidden"
                     >
                         <nav className="px-4 py-4 space-y-2">
                             {navLinks.map((link) => (

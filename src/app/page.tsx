@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuthStore } from "@/store/auth-store";
 import {
   Users,
   UserCheck,
@@ -84,6 +85,7 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -124,17 +126,28 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Link href="/register">
-                <Button size="lg" className="w-full sm:w-auto text-base px-8 shadow-xl shadow-primary/20">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
-                  Sign In
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <Button size="lg" className="w-full sm:w-auto text-base px-8 shadow-xl shadow-primary/20">
+                    Go to Dashboard
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/register">
+                    <Button size="lg" className="w-full sm:w-auto text-base px-8 shadow-xl shadow-primary/20">
+                      Get Started Free
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
+                      Sign In
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
@@ -325,12 +338,12 @@ export default function LandingPage() {
               <p className="text-white/80 max-w-md mx-auto mb-8">
                 Join thousands of Instagram users who trust FollowTracker for their growth analytics.
               </p>
-              <Link href="/register">
+              <Link href={isAuthenticated ? "/dashboard" : "/register"}>
                 <Button
                   size="lg"
                   className="bg-white text-primary hover:bg-white/90 shadow-xl text-base px-8"
                 >
-                  Start Free — No Credit Card
+                  {isAuthenticated ? "Go to Dashboard" : "Start Free — No Credit Card"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>

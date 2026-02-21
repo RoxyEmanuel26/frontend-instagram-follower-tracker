@@ -36,12 +36,12 @@ const item = {
 export default function DashboardPage() {
     const user = useAuthStore((s) => s.user);
 
-    // Mock data — will be replaced with real API data via React Query
+    // Stats will be populated from real API data when Instagram is connected
     const stats = {
-        totalFollowers: 1247,
-        mutuals: 892,
-        newFollowers7d: 34,
-        unfollowers7d: 8,
+        totalFollowers: 0,
+        mutuals: 0,
+        newFollowers7d: 0,
+        unfollowers7d: 0,
     };
 
     const isConnected = false; // Will be from Instagram account status
