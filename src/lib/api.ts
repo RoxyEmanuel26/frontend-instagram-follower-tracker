@@ -2,11 +2,27 @@ import type { ApiResponse } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
+const TOKEN_KEY = "access_token";
+
 class ApiClient {
     private accessToken: string | null = null;
 
+    constructor() {
+        // Restore token from localStorage on initialization
+        if (typeof window !== "undefined") {
+            this.accessToken = localStorage.getItem(TOKEN_KEY);
+        }
+    }
+
     setAccessToken(token: string | null) {
         this.accessToken = token;
+        if (typeof window !== "undefined") {
+            if (token) {
+                localStorage.setItem(TOKEN_KEY, token);
+            } else {
+                localStorage.removeItem(TOKEN_KEY);
+            }
+        }
     }
 
     getAccessToken(): string | null {
