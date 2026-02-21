@@ -5,7 +5,6 @@ import { useAuthStore } from "@/store/auth-store";
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
     Users,
@@ -17,7 +16,6 @@ import {
     Instagram,
     ArrowRight,
     Wifi,
-    WifiOff,
 } from "lucide-react";
 
 const container = {
@@ -36,15 +34,8 @@ const item = {
 export default function DashboardPage() {
     const user = useAuthStore((s) => s.user);
 
-    // Stats will be populated from real API data when Instagram is connected
-    const stats = {
-        totalFollowers: 0,
-        mutuals: 0,
-        newFollowers7d: 0,
-        unfollowers7d: 0,
-    };
-
-    const isConnected = false; // Will be from Instagram account status
+    // Real stats will come from API when Instagram is connected
+    const isConnected = false;
 
     return (
         <motion.div
@@ -95,31 +86,27 @@ export default function DashboardPage() {
             >
                 <StatsCard
                     title="Total Followers"
-                    value={stats.totalFollowers}
+                    value={0}
                     icon={Users}
-                    description="All time"
-                    trend={{ value: 2.8, positive: true }}
+                    description={isConnected ? "All time" : "Connect Instagram to see data"}
                 />
                 <StatsCard
                     title="Mutuals"
-                    value={stats.mutuals}
+                    value={0}
                     icon={UserCheck}
-                    description="Following you back"
-                    trend={{ value: 1.2, positive: true }}
+                    description={isConnected ? "Following you back" : "Connect Instagram to see data"}
                 />
                 <StatsCard
                     title="New Followers"
-                    value={stats.newFollowers7d}
+                    value={0}
                     icon={UserPlus}
-                    description="Last 7 days"
-                    trend={{ value: 12, positive: true }}
+                    description={isConnected ? "Last 7 days" : "Connect Instagram to see data"}
                 />
                 <StatsCard
                     title="Unfollowers"
-                    value={stats.unfollowers7d}
+                    value={0}
                     icon={UserMinus}
-                    description="Last 7 days"
-                    trend={{ value: 3, positive: false }}
+                    description={isConnected ? "Last 7 days" : "Connect Instagram to see data"}
                 />
             </motion.div>
 
@@ -176,26 +163,18 @@ export default function DashboardPage() {
                         <CardHeader>
                             <CardTitle>Recent Activity</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            {[
-                                { action: "New follower", user: "@design_lover", time: "2h ago", type: "success" as const },
-                                { action: "Unfollowed", user: "@tech_bot", time: "5h ago", type: "error" as const },
-                                { action: "New mutual", user: "@creative_mind", time: "1d ago", type: "info" as const },
-                                { action: "Sync completed", user: "1,247 followers synced", time: "2d ago", type: "default" as const },
-                            ].map((activity, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center justify-between py-2 border-b last:border-0"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Badge variant={activity.type}>{activity.action}</Badge>
-                                        <span className="text-sm font-medium">{activity.user}</span>
-                                    </div>
-                                    <span className="text-xs text-muted-foreground hidden sm:block">
-                                        {activity.time}
-                                    </span>
+                        <CardContent>
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <div className="rounded-2xl bg-muted/50 p-4 mb-4">
+                                    <Instagram className="h-8 w-8 text-muted-foreground" />
                                 </div>
-                            ))}
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    No activity yet
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Connect your Instagram account to see follower activity here.
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
                 </motion.div>

@@ -84,10 +84,9 @@ export default function SettingsPage() {
         }
     };
 
-    // Mock sessions
+    // Sessions will be fetched from the API
     const sessions = [
-        { id: "1", device: "Chrome on Windows", ip: "192.168.1.1", current: true, lastActive: "Now" },
-        { id: "2", device: "Safari on iPhone", ip: "10.0.0.5", current: false, lastActive: "2 hours ago" },
+        { id: "current", device: "Current Session", ip: "—", current: true, lastActive: "Now" },
     ];
 
     return (
@@ -111,8 +110,8 @@ export default function SettingsPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                                ? "bg-primary/10 text-primary"
+                                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                                 }`}
                         >
                             <tab.icon className="h-4 w-4" />
