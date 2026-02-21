@@ -45,7 +45,7 @@ export default function DashboardPage() {
     const connectInstagram = async () => {
         setConnecting(true);
         try {
-            const response = await api.get<{ url: string; state: string }>("/api/v1/instagram/connect");
+            const response = await api.get<{ url: string; state: string }>("/instagram/connect");
             const url = response?.data?.url;
             if (url) {
                 window.location.href = url;
