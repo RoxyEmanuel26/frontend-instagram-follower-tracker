@@ -1,20 +1,19 @@
-/* global google */
-
 const GOOGLE_CLIENT_ID =
-    "453461377318-d0mo8h978jipsi8k3b1civ3k0krtcbbv.apps.googleusercontent.com";
+    "1055745080101-837ckjt9p5oduohkn5mbaq43tgovr5eo.apps.googleusercontent.com";
 
 const SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
 let scriptLoaded = false;
+let scriptLoadPromise: Promise<void> | null = null;
 
 /**
  * Dynamically load the Google Identity Services script
  */
 function loadGoogleScript(): Promise<void> {
     if (scriptLoaded) return Promise.resolve();
+    if (scriptLoadPromise) return scriptLoadPromise;
 
-    return new Promise((resolve, reject) => {
-        // Check if already in DOM
+    scriptLoadPromise = new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${SCRIPT_SRC}"]`)) {
             scriptLoaded = true;
             resolve();
@@ -29,13 +28,19 @@ function loadGoogleScript(): Promise<void> {
             scriptLoaded = true;
             resolve();
         };
-        script.onerror = () => reject(new Error("Failed to load Google Sign In"));
+        script.onerror = () => {
+            scriptLoadPromise = null;
+            reject(new Error("Failed to load Google Sign In"));
+        };
         document.head.appendChild(script);
     });
+
+    return scriptLoadPromise;
 }
 
 /**
- * Trigger Google Sign In popup and return the credential (id_token)
+ * Trigger Google Sign In using the standard button popup approach.
+ * This is more reliable than One Tap and works with FedCM.
  */
 export async function signInWithGoogle(
     callback: (idToken: string) => void
@@ -49,60 +54,81 @@ export async function signInWithGoogle(
         throw new Error("Google Identity Services not available");
     }
 
-    g.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response: { credential: string }) => {
-            if (response.credential) {
-                callback(response.credential);
+    return new Promise<void>((resolve, reject) => {
+        g.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response: { credential?: string; error?: string }) => {
+                if (response.credential) {
+                    callback(response.credential);
+                    resolve();
+                } else {
+                    reject(new Error(response.error || "Google sign in was cancelled"));
+                }
+                // Clean up container
+                cleanup();
+            },
+            use_fedcm_for_prompt: true,
+        });
+
+        // Create a visible container for the Google button
+        const container = document.createElement("div");
+        container.id = "google-signin-container";
+        container.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            cursor: pointer;
+        `;
+
+        const inner = document.createElement("div");
+        inner.style.cssText = `
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        `;
+
+        const title = document.createElement("p");
+        title.textContent = "Sign in with Google";
+        title.style.cssText = "margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #333;";
+        inner.appendChild(title);
+
+        const btnContainer = document.createElement("div");
+        btnContainer.style.cssText = "display: flex; justify-content: center;";
+        inner.appendChild(btnContainer);
+
+        container.appendChild(inner);
+
+        // Click backdrop to close
+        container.addEventListener("click", (e) => {
+            if (e.target === container) {
+                cleanup();
+                reject(new Error("Google sign in was cancelled"));
             }
-        },
-    });
+        });
 
-    // Use the One Tap prompt; if dismissed, fall back to the button-style popup
-    g.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Fall back to popup picker
-            g.accounts.oauth2
-                ? g.accounts.id.prompt()
-                : // If One Tap is not available, render a temporary hidden button and click it
-                renderAndClickGoogleButton(g, callback);
-        }
-    });
-}
-
-/**
- * Fallback: render an invisible Google Sign In button and programmatically click it
- */
-function renderAndClickGoogleButton(
-    g: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    callback: (idToken: string) => void
-) {
-    // Create a temporary container
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.top = "-9999px";
-    container.style.left = "-9999px";
-    document.body.appendChild(container);
-
-    g.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response: { credential: string }) => {
-            if (response.credential) {
-                callback(response.credential);
+        const cleanup = () => {
+            if (document.body.contains(container)) {
+                document.body.removeChild(container);
             }
-            // Clean up
-            document.body.removeChild(container);
-        },
-    });
+        };
 
-    g.accounts.id.renderButton(container, {
-        type: "standard",
-        size: "large",
-    });
+        document.body.appendChild(container);
 
-    // Click the rendered button
-    setTimeout(() => {
-        const btn = container.querySelector("div[role=button]") as HTMLElement;
-        if (btn) btn.click();
-    }, 100);
+        // Render the official Google Sign In button
+        g.accounts.id.renderButton(btnContainer, {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: "signin_with",
+            shape: "pill",
+            width: 250,
+        });
+    });
 }
